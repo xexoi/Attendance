@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user in the system (Director, Teacher, or Rep).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User's email" },
+        "name": { "type": "string", "description": "User's full name" },
+        "role": { "type": "string", "enum": ["director", "teacher", "rep"], "description": "User's role" },
+        "sectionId": { "type": "string", "description": "Assigned section ID (for Reps)" },
+        "assignedSections": { "type": "array", "items": { "type": "string" }, "description": "Assigned section IDs (for Teachers)" },
+        "assignedSubjects": { "type": "array", "items": { "type": "string" }, "description": "Assigned subject IDs (for Teachers)" }
+      },
+      "required": ["uid", "email", "role", "name"]
+    },
+    "Section": {
+      "title": "Section",
+      "description": "Represents a class section (e.g., Section 1).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Section ID" },
+        "name": { "type": "string", "description": "Section name (e.g., Section 1)" }
+      },
+      "required": ["id", "name"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Represents a subject/course.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Subject ID" },
+        "name": { "type": "string", "description": "Subject name" }
+      },
+      "required": ["id", "name"]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "Represents a scheduled class session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Schedule ID" },
+        "sectionId": { "type": "string", "description": "Section ID" },
+        "subjectId": { "type": "string", "description": "Subject ID" },
+        "teacherId": { "type": "string", "description": "Teacher ID" },
+        "dayOfWeek": { "type": "string", "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "description": "Day of the week" },
+        "startTime": { "type": "string", "description": "Start time (HH:mm)" },
+        "endTime": { "type": "string", "description": "End time (HH:mm)" }
+      },
+      "required": ["id", "sectionId", "subjectId", "teacherId", "dayOfWeek", "startTime", "endTime"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Represents an attendance record for a specific schedule and date.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Attendance ID (scheduleId_date)" },
+        "scheduleId": { "type": "string", "description": "Schedule ID" },
+        "date": { "type": "string", "description": "Date (YYYY-MM-DD)" },
+        "teacherMark": { "type": "boolean", "description": "Teacher's attendance mark" },
+        "repMark": { "type": "boolean", "description": "Rep's attendance mark" },
+        "status": { "type": "string", "enum": ["present", "absent", "conflict"], "description": "Calculated attendance status" },
+        "lastUpdatedBy": { "type": "string", "description": "UID of the last user to update" },
+        "timestamp": { "type": "number", "description": "Last update timestamp" }
+      },
+      "required": ["id", "scheduleId", "date", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Represents an audit log entry for system actions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log ID" },
+        "action": { "type": "string", "description": "Action performed" },
+        "userId": { "type": "string", "description": "UID of the user performing the action" },
+        "timestamp": { "type": "number", "description": "Action timestamp" },
+        "details": { "type": "object", "description": "Additional action details" }
+      },
+      "required": ["id", "action", "userId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles" },
+    "/sections/{id}": { "schema": "Section", "description": "Class sections" },
+    "/subjects/{id}": { "schema": "Subject", "description": "Subjects" },
+    "/schedules/{id}": { "schema": "Schedule", "description": "Class schedules" },
+    "/attendance/{id}": { "schema": "Attendance", "description": "Attendance records" },
+    "/auditLogs/{id}": { "schema": "AuditLog", "description": "System audit logs" }
+  }
+}
