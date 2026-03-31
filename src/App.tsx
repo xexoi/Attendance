@@ -59,12 +59,22 @@ const LoadingScreen = () => (
 );
 
 const LoginScreen = () => {
+  const [error, setError] = useState<string | null>(null);
+
   const handleLogin = async () => {
+    setError(null);
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      if (err.code === 'auth/unauthorized-domain') {
+        setError("This domain is not authorized for sign-in. Please add it to your Firebase Console's Authorized Domains.");
+      } else if (err.code === 'auth/popup-blocked') {
+        setError("Sign-in popup was blocked. Please allow popups for this site.");
+      } else {
+        setError(err.message || "An unexpected error occurred during sign-in.");
+      }
     }
   };
 
@@ -78,6 +88,14 @@ const LoginScreen = () => {
           <h1 className="text-4xl font-bold tracking-tight text-white">Attendance</h1>
           <p className="text-slate-400">High-end verification system for modern institutions.</p>
         </div>
+        
+        {error && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-left">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
+
         <button 
           onClick={handleLogin}
           className="w-full linear-button py-4 text-lg"
@@ -93,9 +111,19 @@ const LoginScreen = () => {
 // --- Main App ---
 
 export default function App() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>({
+    uid: 'mock-user-id',
+    email: 'nahommamo888@gmail.com',
+    displayName: 'Admin User',
+    photoURL: 'https://picsum.photos/seed/admin/200'
+  });
+  const [profile, setProfile] = useState<UserProfile | null>({
+    uid: 'mock-user-id',
+    email: 'nahommamo888@gmail.com',
+    name: 'Admin User',
+    role: 'director'
+  });
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -160,34 +188,8 @@ export default function App() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        // Fetch or create profile
-        const profileRef = doc(db, 'users', firebaseUser.uid);
-        const profileSnap = await getDoc(profileRef);
-        
-        if (profileSnap.exists()) {
-          setProfile(profileSnap.data() as UserProfile);
-        } else {
-          // Default role for first user (if it's the admin email)
-          const role: UserRole = firebaseUser.email === 'nahommamo888@gmail.com' ? 'director' : 'rep';
-          const newProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            name: firebaseUser.displayName || 'New User',
-            role: role,
-          };
-          await setDoc(profileRef, newProfile);
-          setProfile(newProfile);
-        }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    // Auth is disabled as requested. Mock user is initialized in state.
+    setLoading(false);
   }, []);
 
   // Real-time Data Sync
@@ -220,9 +222,17 @@ export default function App() {
   }, [profile]);
 
   if (loading) return <LoadingScreen />;
-  if (!user || !profile) return <LoginScreen />;
+  if (!user || !profile) return <div className="flex items-center justify-center min-h-screen text-white">Error: Profile not initialized.</div>;
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = () => {
+    // Mock logout - just refresh or do nothing
+    window.location.reload();
+  };
+
+  const switchRole = (role: UserRole) => {
+    setProfile(prev => prev ? { ...prev, role } : null);
+    setActiveTab('dashboard');
+  };
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -295,6 +305,25 @@ export default function App() {
             </nav>
 
             <div className="p-6 border-t border-white/5 space-y-4">
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold px-2">Role Switcher (Debug)</p>
+                <div className="flex flex-wrap gap-1 px-2">
+                  {(['director', 'teacher', 'rep'] as UserRole[]).map(r => (
+                    <button 
+                      key={r}
+                      onClick={() => switchRole(r)}
+                      className={cn(
+                        "text-[10px] px-2 py-1 rounded border transition-colors",
+                        profile.role === r 
+                          ? "bg-indigo-600 border-indigo-500 text-white" 
+                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+                      )}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="flex items-center gap-3 px-2">
                 <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center overflow-hidden">
                   {user.photoURL ? (
