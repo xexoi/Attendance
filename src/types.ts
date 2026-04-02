@@ -8,6 +8,7 @@ export interface UserProfile {
   sectionId?: string;
   assignedSections?: string[];
   assignedSubjects?: string[];
+  teachingSubjectId?: string;
 }
 
 export interface Section {
@@ -25,6 +26,7 @@ export interface Schedule {
   sectionId: string;
   subjectId: string;
   teacherId: string;
+  period: 1 | 2 | 3 | 4;
   dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
   startTime: string;
   endTime: string;
